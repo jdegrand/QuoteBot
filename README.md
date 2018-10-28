@@ -1,7 +1,7 @@
 ## Initialization
 Make a file named key\_file.py and type: \
-`def get_key() \
-    return 'YOUR_TELEGRAM_BOT_KEY'`
+`def get_key()` \
+`    return 'YOUR_TELEGRAM_BOT_KEY'`
 
 ## Usage
 `python3 QOTC.py`
