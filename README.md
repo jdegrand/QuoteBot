@@ -1,6 +1,6 @@
 ## Initialization
-Make a file named key\_file.py and type:
-`def get_key()
+Make a file named key\_file.py and type: \
+`def get_key() \
     return 'YOUR_TELEGRAM_BOT_KEY'`
 
 ## Usage
