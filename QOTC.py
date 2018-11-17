@@ -103,7 +103,7 @@ def help(bot, update):
     update.message.reply_text("Type in '/' for a list of commands!")
 
 def main():
-    key = key_file.get_key()
+    key = os.environ['TELEGRAM_BOT_KEY']
     init()
     updater = Updater(key)
     command = updater.dispatcher
