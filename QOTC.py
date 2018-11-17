@@ -10,7 +10,7 @@ photo_uploads = "photo_uploads.txt"
 brian_folder = os.getcwd() + "/brian_photos"
 current_path = os.getcwd()
 qc = "Oops! This wasn't supposed to happen..."
-quotes = []
+quotes = {}
 count = 0
 users = {}
 
@@ -23,7 +23,11 @@ def init():
     file = open(qc_name)
     qc = file.readline()
     file.close()
-    quotes = [line.strip() for line in open(quotes_name)]
+    file = open(quotes_name)
+    for line in file:
+        key_val = line.strip().split(',', 1)  # splits at first comma only
+        quotes[key_val[0]] = key_val[1]
+    file.close()
     file = open(count_name)
     count = int(file.readline())
     file.close()
@@ -38,29 +42,51 @@ def q(bot, update):
 def r(bot, update, args):
     global quotes
     if len(args) == 0:
-        q = quotes[random.randint(0, len(quotes) - 1)]
+        q = random.choice(list(quotes.values()))
     else:
-        filt = [i for i in quotes if args[0].lower() in i.lower()]
-        if len(filt) == 0:
-            q = "Sorry, I don't seem to have any quotes for that one. Be the first to add one on that topic!"
+        user_text = " ".join(args)
+        if user_text.strip() in quotes:
+            q = quotes[user_text]
         else:
-            q = filt[random.randint(0, len(filt) - 1)]
+            q = "Sorry, I don't seem to have any quotes for that one. Be the first to add one on that topic!"
     bot.send_message(chat_id=update.message.chat_id, text=q)
     
 
 def add(bot, update, args):
     global quotes
     if update.message.reply_to_message != None:
-        reply_text = update.message.reply_to_message.text
-        if len(reply_text.strip()) != 0:
-            quotes += [reply_text]
-            with open(quotes_name, 'a') as file:
-                file.write(reply_text + "\n")
+        quote_key = " ".join(args).split()
+        if len(quote_key) == 0:
+            q = "Please retry! Make sure to give a key for the quote!"
+        else:
+            reply_text = update.message.reply_to_message.text
+            if len(reply_text.strip()) != 0:
+                quotes[quote_key] = reply_text
+                with open(quotes_name, 'a') as file:
+                    file.write(reply_text + "\n")
     user_text = " ".join(args)
-    if len(user_text.strip()) != 0:
-       quotes += [user_text]
-       with open(quotes_name, 'a') as file:
-           file.write(user_text + "\n")
+    key_val = user_text.split(',', 1)
+    if len(key_val) == 2:
+        quotes[key_val[0].strip()] = key_val[1].strip()
+        with open(quotes_name, 'a') as file:
+                file.write(user_text + "\n")
+    elif user_text.split('+') == 1:  # no ',' or '+' in args
+            q = "Sorry, try entering the quote like this: <key> , <quote>"
+            bot.send_message(chat_id=update.message.chat_id, text=q)
+    else:
+        add_lst = user_text.split('+')
+        if len(add_lst) >= 2:
+            try:
+                add_sum = 0
+                for entry in add_lst:
+                    add_sum += int(entry.strip())
+                q = str(add_sum)
+                bot.send_message(chat_id=update.message.chat_id, text=q)
+            except ValueError:
+                q = "Invalid addition!"
+                bot.send_message(chat_id=update.message.chat_id, text=q)
+
+      
 
 def say(bot, update, args):
    user_text = " ".join(args)
