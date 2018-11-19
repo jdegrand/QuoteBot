@@ -39,23 +39,27 @@ def q(bot, update):
     global quotes
     best_quote = ""
     max_occurance = 0
-    for quote in list(quotes.values()):
-        if quote[1] > max_occurance:
-            best_quote = quote[0]
-            max_occurance = quote[1]
-
+    ref_key = ""
+    for key in list(quotes.keys()):
+        quote = quotes[key]
+        if quote[0] > max_occurance:
+            best_quote = quote[1]
+            max_occurance = quote[0]
+            ref_key = key
+    quotes[key][0] = str(int(quotes[key][0]) + 1)
     bot.send_message(chat_id=update.message.chat_id, text=best_quote)
 
 
 def r(bot, update, args):
     global quotes
     if len(args) == 0:
-        q = random.choice(list(quotes.values()))
+        quote_info_list = random.choice(list(quotes.values()))  # occurance at index 0, quote at index 1
+        q = quote_info_list[1]
     else:
         user_text = " ".join(args)
-        if user_text.strip() in quotes:
-            q = quotes[user_text][0]
-            quotes[user_text][1] += 1
+        if user_text.strip() in quotes:  
+            q = quotes[user_text][1]
+            quotes[user_text][0] = str(int(quotes[key][0]) + 1)
         else:
             q = "Sorry, I don't seem to have any quotes for that one. Be the first to add one on that topic!"
     bot.send_message(chat_id=update.message.chat_id, text=q)
@@ -70,15 +74,15 @@ def add(bot, update, args):
         else:
             reply_text = update.message.reply_to_message.text
             if len(reply_text.strip()) != 0:
-                quotes[quote_key] = [reply_text, 0]
+                quotes[quote_key] = [0, reply_text]
                 with open(quotes_name, 'a') as file:
-                    file.write(reply_text + "\n")
+                    file.write(quote_key, ',', str(0), ',', reply_text, '\n')
     user_text = " ".join(args)
     key_val = user_text.split(',', 1)
     elif len(key_val) == 2:
-        quotes[key_val[0].strip()] = [key_val[1].strip(), 0]
+        quotes[key_val[0].strip()] = [0, key_val[1].strip()]
         with open(quotes_name, 'a') as file:
-                file.write(user_text + "\n")
+                file.write(key_val[0], ',', str(0), ',', user_text + '\n')
     elif user_text.split('+') == 1:  # no ',' or '+' in args
             q = "Sorry, try entering the quote like this: <key> , <quote>"
             bot.send_message(chat_id=update.message.chat_id, text=q)
