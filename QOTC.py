@@ -26,18 +26,26 @@ def init():
     file = open(quotes_name)
     for line in file:
         key_val = line.strip().split(',', 1)  # splits at first comma only
-        quotes[key_val[0]] = key_val[1]
+        quotes[key_val[0]] = [key_val[1], key_val[2]]
     file.close()
     file = open(count_name)
     count = int(file.readline())
     file.close()
     for line in open(photo_uploads):
         line = line.strip().split(" ")
-        users[line[0]] = line[1]
+        users[line[0]] = [line[1]]
     
 def q(bot, update):
-    global qc
-    bot.send_message(chat_id=update.message.chat_id, text=qc)
+    global quotes
+    best_quote = ""
+    max_occurance = 0
+    for quote in list(quotes.values()):
+        if quote[1] > max_occurance:
+            best_quote = quote[0]
+            max_occurance = quote[1]
+
+    bot.send_message(chat_id=update.message.chat_id, text=best_quote)
+
 
 def r(bot, update, args):
     global quotes
@@ -46,14 +54,15 @@ def r(bot, update, args):
     else:
         user_text = " ".join(args)
         if user_text.strip() in quotes:
-            q = quotes[user_text]
+            q = quotes[user_text][0]
+            quotes[user_text][1] += 1
         else:
             q = "Sorry, I don't seem to have any quotes for that one. Be the first to add one on that topic!"
     bot.send_message(chat_id=update.message.chat_id, text=q)
     
 
 def add(bot, update, args):
-    global quotes
+    global quotes, quotes_name
     if update.message.reply_to_message != None:
         quote_key = " ".join(args).split()
         if len(quote_key) == 0:
@@ -61,13 +70,13 @@ def add(bot, update, args):
         else:
             reply_text = update.message.reply_to_message.text
             if len(reply_text.strip()) != 0:
-                quotes[quote_key] = reply_text
+                quotes[quote_key] = [reply_text, 0]
                 with open(quotes_name, 'a') as file:
                     file.write(reply_text + "\n")
     user_text = " ".join(args)
     key_val = user_text.split(',', 1)
-    if len(key_val) == 2:
-        quotes[key_val[0].strip()] = key_val[1].strip()
+    elif len(key_val) == 2:
+        quotes[key_val[0].strip()] = [key_val[1].strip(), 0]
         with open(quotes_name, 'a') as file:
                 file.write(user_text + "\n")
     elif user_text.split('+') == 1:  # no ',' or '+' in args
@@ -95,6 +104,7 @@ def say(bot, update, args):
 
 def upload_brian(bot, update, user_data):
     global count
+    global count_name
     global current_path
     global brian_folder
     global users
@@ -114,12 +124,23 @@ def upload_brian(bot, update, user_data):
     file.write(str(count))
     file.close()
 
+
 def brian(bot, update):
     global brian_folder
     global users
     brian = random.choice(os.listdir(brian_folder))
     cap = "Uploaded by " + users[brian]
     bot.send_photo(chat_id=update.message.chat_id, photo=open(brian_folder + '/' + brian, 'rb'), caption=cap)
+
+#def not_brian(bot, update):
+#    global brian_folder, count_name
+#    global users, count
+#    file_id = update.message.reply_to_message.image.photo[-1].file_id  # assume one photo
+#    fname = str(count) + '.jpg'
+#    del users[fname]
+#    count -= 1
+#    with open(count_name, 'w') as file:
+#        file.write(str(count))
 
 def tk(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text="Sean is That Kid")
@@ -145,6 +166,8 @@ def main():
     command.add_handler(CommandHandler("help", help))
     updater.start_polling()
     updater.idle()
+
+
 
 if __name__ == '__main__':
     main()
