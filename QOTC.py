@@ -59,7 +59,7 @@ def r(bot, update, args):
         user_text = " ".join(args)
         if user_text.strip() in quotes:  
             q = quotes[user_text][1]
-            quotes[user_text][0] = str(int(quotes[key][0]) + 1)
+            quotes[user_text][0] = str(int(quotes[user_text][0]) + 1)
         else:
             q = "Sorry, I don't seem to have any quotes for that one. Be the first to add one on that topic!"
     bot.send_message(chat_id=update.message.chat_id, text=q)
