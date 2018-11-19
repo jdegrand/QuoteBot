@@ -1,7 +1,6 @@
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import random
 import os
-import key_file
 
 qc_name = "qc.txt"
 quotes_name = "quotes.txt"
