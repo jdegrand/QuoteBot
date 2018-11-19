@@ -3,26 +3,20 @@ import random
 import os
 import key_file
 
-qc_name = "qc.txt"
 quotes_name = "quotes.txt"
 count_name = "counts.txt"
 photo_uploads = "photo_uploads.txt"
 brian_folder = os.getcwd() + "/brian_photos"
 current_path = os.getcwd()
-qc = "Oops! This wasn't supposed to happen..."
 quotes = {}
 count = 0
 users = {}
 
 def init():
-    global qc
     global quotes
     global count
     global users
     global photo_uploads
-    file = open(qc_name)
-    qc = file.readline()
-    file.close()
     file = open(quotes_name)
     for line in file:
         key_val = line.strip().split(',', 1)  # splits at first comma only
