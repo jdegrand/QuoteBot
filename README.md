@@ -1,9 +1,6 @@
 ## Initialization
-Make a file named key\_file.py and type:
-```
-def get_key()
-    return 'YOUR_TELEGRAM_BOT_KEY'
-```
+Set an environment variable `TELEGRAM_BOT_KEY` to your bot key.
+Ex: `export TELEGRAM_BOT_KEY=keyhere`.
 
 ## Usage
 `python3 QOTC.py`

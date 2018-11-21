@@ -146,7 +146,6 @@ def add(bot, update, args):
                 q = "Invalid addition!"
                 bot.send_message(chat_id=update.message.chat_id, text=q)
       
-
 def say(bot, update, args):
    user_text = " ".join(args)
    if len(user_text.strip()) != 0:
@@ -173,13 +172,51 @@ def upload_brian(bot, update, user_data):
     file.write(str(count))
     file.close()
 
-
 def brian(bot, update):
     global brian_folder
     global users
     brian = random.choice(os.listdir(brian_folder))
     cap = "Uploaded by " + users[brian]
     bot.send_photo(chat_id=update.message.chat_id, photo=open(brian_folder + '/' + brian, 'rb'), caption=cap)
+
+def yesornos(bot, update, args):
+    nos = "That one is a nos fam"
+    yes = "I'd give that one a yes"
+    reply = "Hmm, ask me again sometime"
+    value = 1
+    value = random.randint(0, 1)
+    if value == 1:
+        reply = nos
+    else:
+        reply = yes
+    bot.send_message(chat_id=update.message.chat_id, text=reply)
+
+def drawstraws(bot, update, args):
+    user_text = " ".join(args)
+    halves = user_text.split(',')
+    if len(halves) == 2:
+        halves[0] = halves[0].split(" ")
+        halves[1] = halves[1].split(" ")
+    print(halves)
+    if len(halves) != 2:
+        bot.send_message(chat_id=update.message.chat_id, text="Please use one ',' to seperate arguments")
+    elif len(halves[0]) != len(halves[1]):
+        bot.send_message(chat_id=update.message.chat_id, text="Please use the same number of arguments for both sides")
+    else:
+        result = {}
+        for i in range(0, len(halves[0])):
+            index = random.randint(0, len(halves[1]) - 1)
+            result[halves[0][i]] = halves[1][index]
+            del halves[1][index]
+        final = ""
+        for key in result.keys():
+            temp = key + "    " + result[key] + "\n"
+            final += temp
+        bot.send_message(chat_id=update.message.chat_id, text=final)
+
+            
+        
+    
 
 #def not_brian(bot, update):
 #    global brian_folder, count_name
@@ -211,12 +248,12 @@ def main():
     command.add_handler(MessageHandler(Filters.photo, upload_brian, pass_user_data=True))
     command.add_handler(CommandHandler("brian", brian))
     command.add_handler(CommandHandler("tk", tk))
+    command.add_handler(CommandHandler("yesornos", yesornos, pass_args=True))
+    command.add_handler(CommandHandler("drawstraws", drawstraws, pass_args=True))
     
     command.add_handler(CommandHandler("help", help))
     updater.start_polling()
     updater.idle()
-
-
 
 if __name__ == '__main__':
     main()
