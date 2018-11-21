@@ -1,6 +1,7 @@
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import random
 import os
+from entry import Entry
 
 quotes_name = "quotes.txt"
 count_name = "counts.txt"
@@ -19,11 +20,14 @@ def init():
     quotes_no_key = []
     file = open(quotes_name)
     for line in file:
-        key_val = line.strip().split(',', 2)  # splits at first two commas  only
-        if key_val[0].strip() != "":
-            quotes[key_val[0].strip()] = [key_val[1].strip(), key_val[2].strip()]
+        key_occur_val = line.strip().split(',', 2)  # splits at first two commas  only
+        key = key_occur_val[0].strip()
+        occurances = key_occur_val[1].strip()
+        quote = key_occur_val[2].strip()
+        if key_occur_val[0].strip() != "":
+            quotes[key] = Entry(key, occurances, quote)
         else:
-            quotes_no_key.append([key_val[1].strip(), key_val[2].strip()])
+            quotes_no_key.append(Entry(key, occurances, quote))
     file.close()
     quotes[None] = quotes_no_key
     file = open(count_name)
@@ -40,24 +44,28 @@ def q(bot, update):
     ref_key = ""
     no_key_index = None
     for key in list(quotes.keys()):
-        if key == None:  # contains all quotes with no key
-            for i in range(len(quotes[key])):  # iterate through no-key quotes
-                if int(quotes[key][i][0]) > max_occurance:
-                    best_quote = quotes[key][i][1]
-                    max_occurance = int(quotes[key][i][0])
-                    ref_key = key
+        if key is None:  # contains all quotes with no keyi
+            quotes_no_key = quotes[None]
+            for i in range(len(quotes_no_key)):  # iterate through no-key quotes
+                if quotes_no_key[i].get_occurances() > max_occurance:
+                    best_quote = quotes_no_key[i].get_quote()
+                    max_occurance = quotes_no_key[i].get_occurances()
+                    ref_key = None
                     no_key_index = i
         else:
-            quote = quotes[key]
-            if int(quote[0]) > max_occurance:
-                best_quote = quote[1]
-                max_occurance = int(quote[0])
+            entry = quotes[key]
+            if entry.get_occurances() > max_occurance:
+                best_quote = entry.get_quote()
+                max_occurance = entry.get_occurances()
                 ref_key = key
     if ref_key is None:
-        quotes[ref_key][no_key_index][0] = str(int(quotes[ref_key][no_key_index][0]) + 1)
+        quotes[None][no_key_index].increment_occurances()
     else:
-        quotes[ref_key][0]  = str(int(quotes[ref_key][0]) + 1)
-    bot.send_message(chat_id=update.message.chat_id, text=best_quote)
+        quotes[ref_key].increment_occurances()
+
+    occur = "Number of references: " + str(max_occurance+1)
+    q = best_quote + '\n\n' + occur
+    bot.send_message(chat_id=update.message.chat_id, text=q)
 
 
 def r(bot, update, args):
@@ -66,29 +74,30 @@ def r(bot, update, args):
     if len(args) == 0:
         choice_from_total = random.randint(0, total_entries)
         if choice_from_total < len(quotes):  # choose from quotes with key
-            quote_info_list = [[]]  # make following conditional true
-            while type(quote_info_list[0]) == list:  # anything besides quotes[None]
-                 quote_info_list = random.choice(list(quotes.values()))  # occurance at index 0, quote at index 1
+            random_entry = Entry(None, 0, "")  # make following conditional true
+            while random_entry.get_key == None:  # anything besides quotes[None]
+                 random_entry = random.choice(list(quotes.values()))  # occurance at index 0, quote at index 1
         else:
-            quote_info_list = random.choice(quotes[None])
-        q = quote_info_list[1]
-        bot.send_message(chat_id=update.message.chat_id, text=q)
-        quote_info_list[0] = str(int(quote_info_list[0]) + 1)
+            random_entry = random.choice(quotes[None])
+        quote = random_entry.get_quote()
+        bot.send_message(chat_id=update.message.chat_id, text=quote)
+        random_entry.increment_occurances()
     else:
         user_text = " ".join(args)
         if user_text.strip() in quotes:
-            q = quotes[user_text][1]
-            bot.send_message(chat_id=update.message.chat_id, text=q)
-            quotes[user_text][0] = str(int(quotes[user_text][0]) + 1)
+            entry = quotes[user_text]
+            quote = entry.get_quote()
+            bot.send_message(chat_id=update.message.chat_id, text=quote)
+            entry.increment_occurances()
         else:
-            filt = [i for i in quotes[None] if args[0].lower() in i[1].lower()]
+            filt = [i for i in quotes[None] if args[0].lower() in i.get_quote().lower()]
             if len(filt) == 0:
-                q = "Sorry, I don't seem to have any quotes for that one. Be the first to add one on that topic!"
+                quote = "Sorry, I don't seem to have any quotes for that one. Be the first to add one on that topic!"
             else:
-                rand_idx = random.randint(0, len(filt)-1)
-                q = filt[rand_idx][1]
-                filt[rand_idx][0] = str(int(filt[rand_idx][0]) + 1)
-            bot.send_message(chat_id=update.message.chat_id, text=q)
+                entry = filt[random.randint(0, len(filt)-1)]
+                quote = entry.get_quote()
+                entry.increment_occurances()
+            bot.send_message(chat_id=update.message.chat_id, text=quote)
     
 
 def add(bot, update, args):
@@ -96,13 +105,17 @@ def add(bot, update, args):
     user_text = " ".join(args)
     key_val = user_text.split(',', 1)
     if update.message.reply_to_message != None:
-        quote_key = user_text.split()
+        quote_key = user_text.strip()
         reply_text = update.message.reply_to_message.text
         if len(reply_text.strip()) != 0:
-            if len(quote_key) == 0:
-                quotes[None].append[0, reply_text]
+            if not len(quote_key) == 0:
+                if not quote_key in quotes:
+                    quotes[None].append(Entry(None, 0, reply_text))
+                else:
+                    q = "Sorry, that key is already in use!"
+                    bot.send_message(chat_id=update.message.chat_id, text=q)
             else:
-                quotes[user_text] = [0, reply_text]
+                quotes[user_text] = Entry(quote_key, 0, reply_text)
             with open(quotes_name, 'a') as file:
                 file.write(user_text + ',' + str(0) + ',' + reply_text + '\n')
     elif len(key_val) == 2:
@@ -110,12 +123,14 @@ def add(bot, update, args):
             q = "Sorry, that key is already in use!"
             bot.send_message(chat_id=update.message.chat_id, text=q)
         else:
-            quotes[key_val[0].strip()] = [0, key_val[1].strip()]
+            key = key_val[0].strip()
+            quote = key_val[1].strip()
+            quotes[key] = Entry(key, 0, quote)
             with open(quotes_name, 'a') as file:
-                file.write(key_val[0].strip() + ',' + str(0) + ',' + key_val[1].strip() + '\n')
+                file.write(key + ',' + str(0) + ',' + quote + '\n')
     elif len(user_text.split('+')) == 1:  # no ',' or '+' in args
         if len(user_text.strip()) != 0:
-            quotes[None].append([0, user_text])
+            quotes[None].append(Entry(None, 0, user_text))
             with open(quotes_name, 'a') as file:
                 file.write(',' + str(0) + ',' + "\n")
     else:
@@ -148,7 +163,6 @@ def upload_brian(bot, update, user_data):
     newFile = bot.get_file(file_id)
     fname = str(count) + '.jpg'
     users[fname] = update.message.from_user.first_name
-    print(users[fname])
     with open(photo_uploads, 'a') as file:
         file.write(fname + " " + update.message.from_user.first_name + "\n")
     newFile.download(str(count) + '.jpg')
