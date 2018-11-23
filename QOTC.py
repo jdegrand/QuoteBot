@@ -12,6 +12,7 @@ quotes = {}
 count = 0
 users = {}
 
+
 def init():
     global quotes
     global count
@@ -36,6 +37,7 @@ def init():
     for line in open(photo_uploads):
         line = line.strip().split(" ")
         users[line[0]] = line[1]
+
 
 def q(bot, update):
     global quotes
@@ -146,10 +148,12 @@ def add(bot, update, args):
                 q = "Invalid addition!"
                 bot.send_message(chat_id=update.message.chat_id, text=q)
       
+
 def say(bot, update, args):
    user_text = " ".join(args)
    if len(user_text.strip()) != 0:
         bot.send_message(chat_id=update.message.chat_id, text=user_text)
+
 
 def upload_brian(bot, update, user_data):
     global count
@@ -163,6 +167,7 @@ def upload_brian(bot, update, user_data):
     newFile = bot.get_file(file_id)
     fname = str(count) + '.jpg'
     users[fname] = update.message.from_user.first_name
+    print(users[fname])
     with open(photo_uploads, 'a') as file:
         file.write(fname + " " + update.message.from_user.first_name + "\n")
     newFile.download(str(count) + '.jpg')
@@ -172,12 +177,14 @@ def upload_brian(bot, update, user_data):
     file.write(str(count))
     file.close()
 
+
 def brian(bot, update):
     global brian_folder
     global users
     brian = random.choice(os.listdir(brian_folder))
     cap = "Uploaded by " + users[brian]
     bot.send_photo(chat_id=update.message.chat_id, photo=open(brian_folder + '/' + brian, 'rb'), caption=cap)
+
 
 def yesornos(bot, update, args):
     nos = "That one is a nos fam"
@@ -191,13 +198,13 @@ def yesornos(bot, update, args):
         reply = yes
     bot.send_message(chat_id=update.message.chat_id, text=reply)
 
+
 def drawstraws(bot, update, args):
     user_text = " ".join(args)
     halves = user_text.split(',')
     if len(halves) == 2:
         halves[0] = halves[0].split(" ")
         halves[1] = halves[1].split(" ")
-    print(halves)
     if len(halves) != 2:
         bot.send_message(chat_id=update.message.chat_id, text="Please use one ',' to seperate arguments")
     elif len(halves[0]) != len(halves[1]):
@@ -214,9 +221,6 @@ def drawstraws(bot, update, args):
             final += temp
         bot.send_message(chat_id=update.message.chat_id, text=final)
 
-            
-        
-    
 
 #def not_brian(bot, update):
 #    global brian_folder, count_name
@@ -228,12 +232,56 @@ def drawstraws(bot, update, args):
 #    with open(count_name, 'w') as file:
 #        file.write(str(count))
 
+
 def tk(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text="Sean is That Kid")
     
 
+def remove(bot, update, args):
+    global quotes
+    q = ""
+    key = " ".join(args)
+    if len(key) == 0:
+        if update.message.reply_to_message is None:
+            q = "Either reply to the message you want deleted, or give the key!"
+        else:
+            quote_found = False
+            quote = update.message.reply_to_message.text
+            for i in range(0, len(quotes[None])):
+                lookup_quote = quotes[None][i].get_quote()
+                if lookup_quote == quote:
+                    quote_found = True
+                    q = "You have removed: " + lookup_quote
+                    q += "\n\nThis quote had no key associated with it."
+                    del quotes[None][i]
+                    break
+            if not quote_found:
+                all_quotes = list(quotes.values())
+                for i in range(len(all_quotes)):
+                    if type(all_quotes[i]) is not list:  # not quotes[None]
+                        lookup_quote = all_quotes[i].get_quote()
+                        if lookup_quote == quote:
+                            quote_found = True
+                            lookup_key = all_quotes[i].get_key()
+                            q = "You have removed: " + lookup_quote 
+                            q += "\n\nKey: " + lookup_key + " is now free."
+                            assert lookup_key is not None, "Tried to delete quotes[None]"
+                            del quotes[lookup_key]
+                            break
+            if not quote_found:
+                q = "Sorry, I couldn't find that quote anywhere."
+    else:
+        if key in quotes and key is not None:  # safety to keep quotes[None] 
+            q = "You have removed: " + quotes[key].get_quote()
+            del quotes[key]
+        else:
+            q = "Invalid key!"
+    bot.send_message(chat_id=update.message.chat_id, text=q) 
+
+
 def help(bot, update):
     update.message.reply_text("Type in '/' for a list of commands!")
+
 
 def main():
     key = os.environ['TELEGRAM_BOT_KEY']
@@ -248,12 +296,15 @@ def main():
     command.add_handler(MessageHandler(Filters.photo, upload_brian, pass_user_data=True))
     command.add_handler(CommandHandler("brian", brian))
     command.add_handler(CommandHandler("tk", tk))
+    command.add_handler(CommandHandler("remove", remove, pass_args=True))
     command.add_handler(CommandHandler("yesornos", yesornos, pass_args=True))
     command.add_handler(CommandHandler("drawstraws", drawstraws, pass_args=True))
-    
+    #command.add_handler(CommandHandler("give_key", give_key, pass_args=True))
+
     command.add_handler(CommandHandler("help", help))
     updater.start_polling()
     updater.idle()
+
 
 if __name__ == '__main__':
     main()
