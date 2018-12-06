@@ -2,6 +2,9 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import random
 import os
 from entry import Entry
+import requests
+import json
+import pprint
 
 quotes_name = "quotes.txt"
 count_name = "counts.txt"
@@ -11,6 +14,9 @@ current_path = os.getcwd()
 quotes = {}
 count = 0
 users = {}
+aoc_session = os.environ['aoc_session']
+aoc_csh = os.environ['aoc_csh']
+aoc_b1 = os.environ['aoc_b1']
 
 
 def init():
@@ -278,10 +284,38 @@ def remove(bot, update, args):
             q = "Invalid key!"
     bot.send_message(chat_id=update.message.chat_id, text=q) 
 
+def aoc(bot, update, args):
+    if len(args) == 0:
+        bot.send_message(chat_id=update.message.chat_id, text="Please specify the private leaderboard:\n/aoc [leaderboard]")
+        return
+    elif args[0].lower() == "csh":
+        content = requests.get('https://adventofcode.com/2018/leaderboard/private/view/' + aoc_csh + '.json', cookies={'session': aoc_session})
+    elif args[0].lower() == "b1":
+        content = requests.get('https://adventofcode.com/2018/leaderboard/private/view/' + aoc_b1 + '.json', cookies={'session': aoc_session})
+    else:
+        output = "'" + args[0] + "'" + " is not a valid private leaderboard!\nPlease use B1 or CSH!"
+        bot.send_message(chat_id=update.message.chat_id, text=output)
+        return
+
+    data = content.json()
+    members = data["members"]
+    ls = []
+    for member in members:
+        mem = data["members"][member]
+        ls += [[mem["name"], mem["local_score"], mem["stars"]]]
+    ls.sort(key=lambda i: int(i[1]))
+    ls.reverse()
+    output = "<pre>Advent Of Code: " + args[0].upper() + "\n"
+    output += "{:^14} {:<5}".format("Member", "Score Stars") + "\n"
+    for item in ls:
+        output += "{:<15} {:>4} {:>4}".format(item[0][:15], item[1], item[2]) + "\n"
+    output += "</pre>"
+    print(output)
+    bot.send_message(chat_id=update.message.chat_id, parse_mode="HTML",  text=output) 
+    
 
 def help(bot, update):
     update.message.reply_text("Type in '/' for a list of commands!")
-
 
 def main():
     key = os.environ['TELEGRAM_BOT_KEY']
@@ -299,6 +333,7 @@ def main():
     command.add_handler(CommandHandler("remove", remove, pass_args=True))
     command.add_handler(CommandHandler("yesornos", yesornos, pass_args=True))
     command.add_handler(CommandHandler("drawstraws", drawstraws, pass_args=True))
+    command.add_handler(CommandHandler("aoc", aoc, pass_args=True))
     #command.add_handler(CommandHandler("give_key", give_key, pass_args=True))
 
     command.add_handler(CommandHandler("help", help))
