@@ -5,6 +5,8 @@ from entry import Entry
 import requests
 import json
 import pprint
+import datetime
+from time import localtime, strftime
 
 quotes_name = "quotes.txt"
 count_name = "counts.txt"
@@ -133,6 +135,8 @@ def add(bot, update, args):
         else:
             key = key_val[0].strip()
             quote = key_val[1].strip()
+            if quote == "":
+                return
             quotes[key] = Entry(key, 0, quote)
             with open(quotes_name, 'a') as file:
                 file.write(key + ',' + str(0) + ',' + quote + '\n')
@@ -313,6 +317,30 @@ def aoc(bot, update, args):
     print(output)
     bot.send_message(chat_id=update.message.chat_id, parse_mode="HTML",  text=output) 
     
+def WhereCanIPark(bot, update):
+    # 0  1  2  3  4  5  6
+    # Mo Tu We Th Fr Sa Su
+    day = datetime.datetime.today().weekday()
+    hour = int(strftime("%H", localtime()))
+    noParkCloseSide = [0, 2, 4]
+    side = None
+    if day in noParkCloseSide and hour < 18:
+        side = "the other"
+    elif day in noParkCloseSide and hour >= 18:
+        side = "your"
+    elif day not in noParkCloseSide and hour < 18:
+        side = "your"
+    elif day not in noParkCloseSide and hour >= 18:
+        side = "the other"
+    else:
+        side = "unknown"
+    r = "Error!"
+    if hour == 18:
+        r = "You can technically park anywhere right now, but I would recommend parking on " + side + "side of the street."
+    else:
+        r = "Park on " + side + " side of the street!"
+    print(r)
+    bot.send_message(chat_id=update.message.chat_id, text=r)
 
 def help(bot, update):
     update.message.reply_text("Type in '/' for a list of commands!")
@@ -334,6 +362,7 @@ def main():
     command.add_handler(CommandHandler("yesornos", yesornos, pass_args=True))
     command.add_handler(CommandHandler("drawstraws", drawstraws, pass_args=True))
     command.add_handler(CommandHandler("aoc", aoc, pass_args=True))
+    command.add_handler(CommandHandler("WhereCanIPark", WhereCanIPark))
     #command.add_handler(CommandHandler("give_key", give_key, pass_args=True))
 
     command.add_handler(CommandHandler("help", help))
